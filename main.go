@@ -12,6 +12,7 @@ import (
 
 type questions []string
 type answers []int
+var start time.Time
 
 func startQuiz(p questions, c chan answers, cTime <-chan time.Time) {
 	jawabanUser := make(answers, len(p))
@@ -19,7 +20,7 @@ func startQuiz(p questions, c chan answers, cTime <-chan time.Time) {
 	for i := range p {
 		select {
 		case <- cTime :
-			fmt.Println("Kriiingg, waktu habis!")
+			fmt.Println("Kriiingg, waktu habis!", time.Since(start))
 			c <- jawabanUser
 			break
 
@@ -36,13 +37,15 @@ func startQuiz(p questions, c chan answers, cTime <-chan time.Time) {
 	c <- jawabanUser
 }
 
-
 func main() {
-	duration := 10 * time.Second
+	duration := 3 * time.Second
+	start = time.Now()
 	timer := time.NewTimer(duration)
 
 	pertanyaan, kunciJawaban := readCSV()
 	jawabanUser := make(chan answers)
+
+	fmt.Printf("Quiz dimulai! waktu anda %v\n", duration)
 
 	go startQuiz(pertanyaan, jawabanUser, timer.C)
 
