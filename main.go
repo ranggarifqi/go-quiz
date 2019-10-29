@@ -7,27 +7,43 @@ import (
 	"encoding/csv"
 	"strings"
 	"strconv"
+	"time"
 )
 
 type questions []string
 type answers []int
 
-func main() {
-	pertanyaan, kunciJawaban := readCSV()
+func startQuiz(p questions, c chan answers) {
+	// var jawabanUser answers
+	jawabanUser := make(answers, len(p))
 
-	var jawabanUser answers
-
-	for i := range pertanyaan {
+	for i := range p {
 		var ans int
-		fmt.Printf("%v = ", pertanyaan[i])
+		fmt.Printf("%v = ", p[i])
 		_, err := fmt.Scan(&ans)
 		if err != nil {
 			panic(err)
 		}
-		jawabanUser = append(jawabanUser, ans)
+		jawabanUser[i] = ans
 	}
+	c <- jawabanUser
+}
 
-	fmt.Printf("Anda berhasil menjawab %v dari %v pertanyaan", getScore(jawabanUser, kunciJawaban), len(kunciJawaban))
+
+func main() {
+	duration := 50 * time.Second
+
+	pertanyaan, kunciJawaban := readCSV()
+	jawabanUser := make(chan answers)
+
+	go startQuiz(pertanyaan, jawabanUser)
+
+	select {
+	case m := <- jawabanUser:
+		fmt.Printf("Anda berhasil menjawab %v dari %v pertanyaan", getScore(m, kunciJawaban), len(kunciJawaban))
+	case <- time.After(duration):
+		fmt.Printf("\nKriiingg, waktu habis")
+	}
 }
 
 func getScore(jawabanUser answers, kunciJawaban answers) int {
