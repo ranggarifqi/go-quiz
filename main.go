@@ -8,6 +8,7 @@ import (
 	"strings"
 	"strconv"
 	"time"
+	"flag"
 )
 
 type questions []string
@@ -38,14 +39,16 @@ func startQuiz(p questions, c chan answers, cTime <-chan time.Time) {
 }
 
 func main() {
-	duration := 3 * time.Second
+	d := flag.Int("d", 10, "Tentukan durasi quiz. Default nya adalah 10 detik")
+	flag.Parse()
+
 	start = time.Now()
-	timer := time.NewTimer(duration)
+	timer := time.NewTimer(time.Duration(*d) * time.Second)
 
 	pertanyaan, kunciJawaban := readCSV()
 	jawabanUser := make(chan answers)
 
-	fmt.Printf("Quiz dimulai! waktu anda %v\n", duration)
+	fmt.Printf("Quiz dimulai! waktu anda %v detik!\n", *d)
 
 	go startQuiz(pertanyaan, jawabanUser, timer.C)
 
