@@ -13,37 +13,41 @@ import (
 type questions []string
 type answers []int
 
-func startQuiz(p questions, c chan answers) {
-	// var jawabanUser answers
+func startQuiz(p questions, c chan answers, cTime <-chan time.Time) {
 	jawabanUser := make(answers, len(p))
 
 	for i := range p {
-		var ans int
-		fmt.Printf("%v = ", p[i])
-		_, err := fmt.Scan(&ans)
-		if err != nil {
-			panic(err)
+		select {
+		case <- cTime :
+			fmt.Println("Kriiingg, waktu habis!")
+			c <- jawabanUser
+			break
+
+		default:
+			var ans int
+			fmt.Printf("%v = ", p[i])
+			_, err := fmt.Scan(&ans)
+			if err != nil {
+				panic(err)
+			}
+			jawabanUser[i] = ans
 		}
-		jawabanUser[i] = ans
 	}
 	c <- jawabanUser
 }
 
 
 func main() {
-	duration := 50 * time.Second
+	duration := 10 * time.Second
+	timer := time.NewTimer(duration)
 
 	pertanyaan, kunciJawaban := readCSV()
 	jawabanUser := make(chan answers)
 
-	go startQuiz(pertanyaan, jawabanUser)
+	go startQuiz(pertanyaan, jawabanUser, timer.C)
 
-	select {
-	case m := <- jawabanUser:
-		fmt.Printf("Anda berhasil menjawab %v dari %v pertanyaan", getScore(m, kunciJawaban), len(kunciJawaban))
-	case <- time.After(duration):
-		fmt.Printf("\nKriiingg, waktu habis")
-	}
+	ju := <- jawabanUser
+	fmt.Printf("Anda berhasil menjawab %v dari %v pertanyaan", getScore(ju, kunciJawaban), len(kunciJawaban))
 }
 
 func getScore(jawabanUser answers, kunciJawaban answers) int {
